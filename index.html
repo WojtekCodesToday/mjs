@@ -69,7 +69,7 @@
     <div class="pane terminal" id="terminal">
         <div id="output" class="output"></div>
         <div class="input-container">
-            <span>mommy&gt; </span><span id="input-placeholder" class="input-placeholder"></span>
+            <div>&gt; <span id="input-placeholder" class="input-placeholder"></span></div>
             <input id="input" class="input hidden-input" type="text" autofocus>
         </div>
     </div>
@@ -229,13 +229,15 @@
         document.getElementById('input').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 const input = e.target.value.trim();
-                const outputDiv = document.getElementById('output');
+                if (input !== "") {
+                    const outputDiv = document.getElementById('output');
 
-                const commandResponse = handleCommand(input);
-                outputDiv.innerHTML += `<div>mommy&gt; ${input}</div>`;
-                outputDiv.innerHTML += `<div>${commandResponse}</div>`;
-                e.target.value = '';
-                document.getElementById('input-placeholder').innerText = '';
+                    const commandResponse = handleCommand(input);
+                    outputDiv.innerHTML += `<div>&gt; ${input}</div>`;
+                    outputDiv.innerHTML += `<div>${commandResponse}</div>`;
+                    e.target.value = '';
+                    document.getElementById('input-placeholder').innerText = '';
+                }
             }
         });
         document.getElementById('input').addEventListener('input', (e) => {
@@ -253,4 +255,5 @@
         document.getElementById('input').focus();
     </script>
 </body>
+
 </html>
