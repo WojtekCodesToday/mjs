@@ -26,12 +26,20 @@
             background-color: #282c34;
             color: #61dafb;
             cursor: text;
+            overflow-y: auto;
+            overscroll-behavior-y: contain;
+            scroll-snap-type: y mandatory;
+            scroll-snap-align: start;
         }
 
         .config {
             background-color: #000;
             color: #fff;
-            overflow-y: scroll;
+            overflow: hidden;
+        }
+
+        #config-editor {
+            resize: none;
         }
 
         .input-container {
@@ -236,6 +244,11 @@
                     outputDiv.innerHTML += `<div>&gt; ${input}</div>`;
                     outputDiv.innerHTML += `<div>${commandResponse}</div>`;
                     e.target.value = '';
+                    outputDiv.scrollTo({
+                        top: outputDiv.scrollHeight,
+                        left: 0,
+                        behavior: 'smooth'
+                    });
                     document.getElementById('input-placeholder').innerText = '';
                 }
             }
