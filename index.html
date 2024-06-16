@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MommyJS Terminal</title>
+    <style>
+        body {
+            font-family: monospace;
+            background-color: #282c34;
+            color: #61dafb;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        .pane {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .terminal {
+            background-color: #282c34;
+            color: #61dafb;
+            cursor: text;
+        }
+
+        .config {
+            background-color: #000;
+            color: #fff;
+            overflow-y: scroll;
+        }
+
+        .input-container {
+            display: flex;
+            align-items: center;
+        }
+
+        .input {
+            border: none;
+            outline: none;
+            background: none;
+            color: #61dafb;
+            font-family: inherit;
+            font-size: 1em;
+            caret-color: #61dafb;
+            position: absolute;
+            left: -9999px;
+            /* Move the input off-screen */
+        }
+
+        .output {
+            white-space: pre-wrap;
+        }
+
+        .hidden-input {
+            opacity: 0;
+            position: absolute;
+            left: -9999px;
+            /* Move the input off-screen */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="pane terminal" id="terminal">
+        <div id="output" class="output"></div>
+        <div class="input-container">
+            <span>mommy&gt; </span><span id="input-placeholder" class="input-placeholder"></span>
+            <input id="input" class="input hidden-input" type="text" autofocus>
+        </div>
+    </div>
+    <div class="pane config">
+        <textarea id="config-editor"
+            style="width:100%; height:100%; border:none; outline:none; background-color:black; color:white; font-family:inherit; font-size:1em;"></textarea>
+    </div>
+
+    <script>
+        const defaultConfig = {
+            MOMMY_CAREGIVER: "mommy",
+            MOMMY_PRONOUNS: ["she", "her", "her"],
+            MOMMY_SWEETIE: "girl",
+            MOMMY_PREFIX: "",
+            MOMMY_SUFFIX: "~",
+            MOMMY_CAPITALIZE: "0",
+            MOMMY_COLOR: "005",
+            MOMMY_COMPLIMENTS: [
+                "*pets your head*",
+                "amazing work as always",
+                "good %%SWEETIE%%",
+                "good job, %%SWEETIE%%",
+                "that's a good %%SWEETIE%%",
+                "who's my good %%SWEETIE%%",
+                "%%CAREGIVER%% is very proud of you",
+                "%%CAREGIVER%% is so proud of you",
+                "%%CAREGIVER%% knew you could do it",
+                "%%CAREGIVER%% loves you, you are doing amazing",
+                "%%CAREGIVER%%'s %%SWEETIE%% is so smart",
+                "%%CAREGIVER%% thinks you deserve a special treat for that",
+                "my little %%SWEETIE%% deserves a big fat kiss for that"
+            ],
+            MOMMY_COMPLIMENTS_EXTRA: [],
+            MOMMY_COMPLIMENTS_ENABLED: "1",
+            MOMMY_ENCOURAGEMENTS: [
+                "%%CAREGIVER%% believes in you",
+                "%%CAREGIVER%% knows you'll get there",
+                "%%CAREGIVER%% knows %%THEIR%% little %%SWEETIE%% can do better",
+                "just know that %%CAREGIVER%% still loves you",
+                "don't worry, it'll be alright",
+                "it's okay to make mistakes",
+                "%%CAREGIVER%% knows it's hard, but it will be okay",
+                "%%CAREGIVER%% is always here for you",
+                "%%CAREGIVER%% is always here for you if you need %%THEM%%",
+                "come here, sit on my lap while we figure this out together",
+                "never give up, my love",
+                "just a little further, %%CAREGIVER%% knows you can do it",
+                "%%CAREGIVER%% knows you'll get there, don't worry about it",
+                "did %%CAREGIVER%%'s %%SWEETIE%% make a big mess"
+            ],
+            MOMMY_ENCOURAGEMENTS_EXTRA: [],
+            MOMMY_ENCOURAGEMENTS_ENABLED: "1",
+            MOMMY_FORBIDDEN_WORDS: "",
+            MOMMY_IGNORED_STATUSES: "130"
+        };
+
+        const replaceAll = (str, search, replacement) => {
+            return str.split(search).join(replacement);
+        };
+
+        const splitPronouns = (pronouns) => {
+            const [they, them, their] = pronouns.split(' ');
+            return { they, them, their };
+        };
+
+        const listNormalize = (list) => {
+            return list
+                .map(line => line.trim())
+                .filter(line => line && !line.startsWith('#'));
+        };
+
+        const listChoose = (list) => {
+            const randomIndex = crypto.getRandomValues(new Uint32Array(1))[0] % list.length;
+            return list[randomIndex];
+        };
+
+        const fillTemplate = (template, sweetie, pronouns, caregiver, prefix, suffix, capitalize) => {
+            const { they, them, their } = splitPronouns(pronouns);
+
+            const choose = (sweetieList, def) => {
+                const filteredList = sweetieList.filter(item => !item.startsWith('#'));
+                if (filteredList.length === 0) {
+                    return def;
+                } else {
+                    return filteredList[Math.floor(Math.random() * filteredList.length)];
+                }
+            };
+
+            let output = template
+                .replace(/%%SWEETIE%%/g, choose(sweetie.split("/"), "girl"))
+                .replace(/%%THEY%%/g, they)
+                .replace(/%%THEM%%/g, them)
+                .replace(/%%THEIR%%/g, their)
+                .replace(/%%CAREGIVER%%/g, choose(caregiver.split("/"), "mommy"))
+                .replace(/%%N%%/g, '\n')
+                .replace(/%%S%%/g, '/');
+
+            if (capitalize === '1') {
+                output = output.charAt(0).toUpperCase() + output.slice(1);
+            } else if (capitalize === '0') {
+                output = output.charAt(0).toLowerCase() + output.slice(1);
+            }
+
+            if (prefix && prefix.trim().length > 0 && prefix.trim().slice(-1) !== " ") {
+                return `${prefix} ${output}${suffix}`;
+            } else {
+                return `${prefix}${output}${suffix}`;
+            }
+        };
+
+        const handleCommand = (command) => {
+            const args = command.trim().split(' ');
+            let response = '';
+
+            if (args[0] === 'mommy') {
+                const templates = config.MOMMY_COMPLIMENTS.concat(config.MOMMY_COMPLIMENTS_EXTRA);
+                const forbiddenWords = listNormalize(config.MOMMY_FORBIDDEN_WORDS.split('\n'));
+                const availableTemplates = templates.filter(line => !forbiddenWords.some(word => line.includes(word)));
+                const template = listChoose(availableTemplates);
+                response = fillTemplate(template, config.MOMMY_SWEETIE, config.MOMMY_PRONOUNS.join(' '), config.MOMMY_CAREGIVER, config.MOMMY_PREFIX, config.MOMMY_SUFFIX, config.MOMMY_CAPITALIZE);
+            } else {
+                response = 'Unknown command';
+            }
+
+            return response;
+        };
+
+        // Save and load config to/from cookies
+        const saveConfigToCookies = (config) => {
+            document.cookie = `config=${encodeURIComponent(JSON.stringify(config))}; path=/; max-age=${60 * 60 * 24 * 30}`;
+        };
+
+        const loadConfigFromCookies = () => {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const [name, value] = cookie.split('=').map(c => c.trim());
+                if (name === 'config') {
+                    return JSON.parse(decodeURIComponent(value));
+                }
+            }
+            return defaultConfig;
+        };
+
+        let config = loadConfigFromCookies();
+
+        document.getElementById('config-editor').value = JSON.stringify(config, null, 2);
+
+        document.getElementById('config-editor').addEventListener('input', (e) => {
+            try {
+                config = JSON.parse(e.target.value);
+                saveConfigToCookies(config);
+            } catch (error) {
+                console.error('Invalid JSON', error);
+            }
+        });
+
+        document.getElementById('input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const input = e.target.value.trim();
+                const outputDiv = document.getElementById('output');
+
+                const commandResponse = handleCommand(input);
+                outputDiv.innerHTML += `<div>mommy&gt; ${input}</div>`;
+                outputDiv.innerHTML += `<div>${commandResponse}</div>`;
+                e.target.value = '';
+                document.getElementById('input-placeholder').innerText = '';
+            }
+        });
+        document.getElementById('input').addEventListener('input', (e) => {
+            document.getElementById('input-placeholder').innerText = e.target.value;
+        });
+
+        document.getElementById('config-editor').addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent focus from moving to terminal input
+        });
+
+        document.addEventListener('click', () => {
+            document.getElementById('input').focus();
+        });
+
+        document.getElementById('input').focus();
+    </script>
+</body>
+</html>
